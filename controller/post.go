@@ -3,10 +3,12 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"strconv"
 	"yanblue/logic"
 	"yanblue/models"
 )
 
+// CreatePostHandler create post handler
 func CreatePostHandler(c *gin.Context) {
 	// 1.get param and check param
 	p := &models.Post{}
@@ -31,4 +33,25 @@ func CreatePostHandler(c *gin.Context) {
 	}
 	//3.return response
 	ResponseSuccess(c, nil)
+}
+
+// GetPostDetailHandler get post detail handler
+func GetPostDetailHandler(c *gin.Context) {
+	// 1.get param from url
+	pidStr := c.Param("id")
+	pid, err := strconv.ParseInt(pidStr, 10, 64)
+	if err != nil {
+		zap.L().Error("strconv.ParseInt(pidStr, 10, 64) failed", zap.Error(err))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
+	// 2.get post detail by id
+	data, err := logic.GetPostDetailByID(pid)
+	if err != nil {
+		zap.L().Error("logic.GetPostDetailByID(pid) failed", zap.Error(err))
+		ResponseError(c, CodeServerBusy)
+		return
+	}
+	// 3.return response
+	ResponseSuccess(c, data)
 }
