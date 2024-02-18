@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
 	"yanblue/models"
 )
@@ -37,4 +38,24 @@ func encryptPassword(oPassword string) string {
 	h := md5.New()
 	h.Write([]byte(SecrectKey + oPassword))
 	return hex.EncodeToString(h.Sum([]byte(oPassword)))
+}
+
+func Login(user *models.User) (err error) {
+	// user login password
+	oPassword := user.Password
+	sqlStr := "select user_id, username, password from user where username = ?"
+	err = db.Get(user, sqlStr, user.Username)
+	if err != sql.ErrNoRows {
+		return ErrorUserExist
+	}
+	if err != nil {
+		// user not exist, query sql error
+		return err
+	}
+	// check password correct
+	password := encryptPassword(oPassword)
+	if password != user.Password {
+		return ErrorInvalidPassword
+	}
+	return
 }
