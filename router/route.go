@@ -28,6 +28,8 @@ func SetupRouter(mode string) *gin.Engine {
 
 	v1.GET("/post/:id", controller.GetPostDetailHandler)
 
+	v1.GET("/posts", controller.GetPostListHandler)
+
 	v1.Use(middlewares.JWTAuthMiddleware()) // jwt auth
 
 	{
