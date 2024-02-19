@@ -35,6 +35,9 @@ func SetupRouter(mode string) *gin.Engine {
 	{
 		v1.POST("/post", controller.CreatePostHandler)
 
+		// 点赞
+		v1.POST("/vote", controller.PostVoteHandler)
+
 	}
 	r.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
