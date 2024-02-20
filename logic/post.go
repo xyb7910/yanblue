@@ -3,6 +3,7 @@ package logic
 import (
 	"go.uber.org/zap"
 	"yanblue/dao/mysql"
+	"yanblue/dao/redis"
 	"yanblue/models"
 	"yanblue/pkg/snowflake"
 )
@@ -82,6 +83,58 @@ func GetPostList(page, size int64) (data []*models.ApiPostDetail, err error) {
 		}
 		postDetail := &models.ApiPostDetail{
 			AuthorName:      user.Username,
+			Post:            post,
+			CommunityDetail: community,
+		}
+		data = append(data, postDetail)
+	}
+	return
+}
+
+func GetPostList2(p *models.ParamPostList) (data []*models.ApiPostDetail, err error) {
+	// get id from redis
+	ids, err := redis.GetPostIDsInOrder(p)
+	if err != nil {
+		return
+	}
+	if len(ids) == 0 {
+		zap.L().Warn("redis.GetPostIDsInOrder(p) return 0 data")
+		return
+	}
+	zap.L().Debug("GetPostList2", zap.Any("ids", ids))
+
+	posts, err := mysql.GetPostListByIDs(ids)
+	if err != nil {
+		return
+	}
+	zap.L().Debug("GetPostList2", zap.Any("posts", posts))
+
+	voteData, err := redis.GetPostVoteData(ids)
+	if err != nil {
+		return
+	}
+
+	// query author message and back data to add post detail
+	for idx, post := range posts {
+		// get author message by author id
+		user, err := mysql.GetUserByID(post.AuthorID)
+		if err != nil {
+			zap.L().Error("mysql.GetUserByID(post.AuthorID) failed",
+				zap.Int64("post.AuthorID", post.AuthorID),
+				zap.Error(err))
+			continue
+		}
+		// get community message by community id
+		community, err := mysql.GetCommunityDetailByID(post.CommunityID)
+		if err != nil {
+			zap.L().Error("mysql.GetCommunityDetailByID(post.CommunityID) failed",
+				zap.Int64("post.CommunityID", post.CommunityID),
+				zap.Error(err))
+			continue
+		}
+		postDetail := &models.ApiPostDetail{
+			AuthorName:      user.Username,
+			VoteNum:         voteData[idx],
 			Post:            post,
 			CommunityDetail: community,
 		}

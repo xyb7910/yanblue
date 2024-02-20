@@ -69,3 +69,25 @@ func GetPostListHandler(c *gin.Context) {
 	}
 	ResponseSuccess(c, data)
 }
+
+func GetPostListHandler2(c *gin.Context) {
+	p := &models.ParamPostList{
+		Page:  1,
+		Size:  10,
+		Order: models.OrderTime,
+	}
+
+	if err := c.ShouldBindQuery(p); err != nil {
+		zap.L().Error("c.ShouldBindQuery(p) failed", zap.Error(err))
+		ResponseError(c, CodeInvalidParam)
+		return
+	}
+
+	data, err := logic.GetPostList2(p)
+	if err != nil {
+		zap.L().Error("logic.GetPostList2(p) failed", zap.Error(err))
+		ResponseError(c, CodeServerBusy)
+		return
+	}
+	ResponseSuccess(c, data)
+}
