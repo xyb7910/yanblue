@@ -7,52 +7,53 @@ import (
 	"yanblue/models"
 )
 
-const SecrectKey = "yanblue.com"
+// 把每一步数据库操作封装成函数
+// 待logic层根据业务需求调用
 
-// CheckUserExist check user exist
+const secret = "liwenzhou.com"
+
+// CheckUserExist 检查指定用户名的用户是否存在
 func CheckUserExist(username string) (err error) {
-	sqlStr := "select count(user_id) from user where username = ?"
+	sqlStr := `select count(user_id) from user where username = ?`
 	var count int64
 	if err := db.Get(&count, sqlStr, username); err != nil {
 		return err
 	}
-
 	if count > 0 {
 		return ErrorUserExist
 	}
 	return
 }
 
-// InsertUser insert user
+// InsertUser 想数据库中插入一条新的用户记录
 func InsertUser(user *models.User) (err error) {
-	// encrypt password
+	// 对密码进行加密
 	user.Password = encryptPassword(user.Password)
-	// commit sql
-	sqlStr := "insert into user(user_id,username, password) values(?,?,?)"
+	// 执行SQL语句入库
+	sqlStr := `insert into user(user_id, username, password) values(?,?,?)`
 	_, err = db.Exec(sqlStr, user.UserID, user.Username, user.Password)
 	return
 }
 
-// EncryptPassword encrypt password
+// encryptPassword 密码加密
 func encryptPassword(oPassword string) string {
 	h := md5.New()
-	h.Write([]byte(SecrectKey + oPassword))
+	h.Write([]byte(secret))
 	return hex.EncodeToString(h.Sum([]byte(oPassword)))
 }
 
 func Login(user *models.User) (err error) {
-	// user login password
-	oPassword := user.Password
-	sqlStr := "select user_id, username, password from user where username = ?"
+	oPassword := user.Password // 用户登录的密码
+	sqlStr := `select user_id, username, password from user where username=?`
 	err = db.Get(user, sqlStr, user.Username)
-	if err != sql.ErrNoRows {
-		return ErrorUserExist
+	if err == sql.ErrNoRows {
+		return ErrorUserNotExist
 	}
 	if err != nil {
-		// user not exist, query sql error
+		// 查询数据库失败
 		return err
 	}
-	// check password correct
+	// 判断密码是否正确
 	password := encryptPassword(oPassword)
 	if password != user.Password {
 		return ErrorInvalidPassword
@@ -60,9 +61,10 @@ func Login(user *models.User) (err error) {
 	return
 }
 
-func GetUserByID(uid int64) (user *models.User, err error) {
-	user = &models.User{}
-	sqlStr := "select user_id, username from user where user_id = ?"
+// GetUserById 根据id获取用户信息
+func GetUserById(uid int64) (user *models.User, err error) {
+	user = new(models.User)
+	sqlStr := `select user_id, username from user where user_id = ?`
 	err = db.Get(user, sqlStr, uid)
 	return
 }

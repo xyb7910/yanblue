@@ -3,22 +3,24 @@ package controller
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"go.uber.org/zap"
 	"yanblue/dao/mysql"
 	"yanblue/logic"
 	"yanblue/models"
+
+	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+
+	"github.com/gin-gonic/gin"
 )
 
-// SignUpHandler SinUpHandler is a function to handle sign up request
+// SignUpHandler 处理注册请求的函数
 func SignUpHandler(c *gin.Context) {
-	// 1. get the user info from the request body
-	p := new(models.ParamSignUp)
+	// 1. 获取参数和参数校验
+	p := new(models.ParamSignUp) // 传指针
 	if err := c.ShouldBindJSON(p); err != nil {
-		// query param error
+		// 请求参数有误，直接返回响应
 		zap.L().Error("SignUp with invalid param", zap.Error(err))
-		// check err is validator.ValidationErrors
+		// 判断err是不是validator.ValidationErrors 类型
 		errs, ok := err.(validator.ValidationErrors)
 		if !ok {
 			ResponseError(c, CodeInvalidParam)
@@ -27,9 +29,9 @@ func SignUpHandler(c *gin.Context) {
 		ResponseErrorWithMsg(c, CodeInvalidParam, removeTopStruct(errs.Translate(trans)))
 		return
 	}
-	//2.handle the sign-up logic
+	// 2. 业务处理
 	if err := logic.SignUp(p); err != nil {
-		zap.L().Error("logic.SignUp with error", zap.Error(err))
+		zap.L().Error("logic.SignUp failed", zap.Error(err))
 		if errors.Is(err, mysql.ErrorUserExist) {
 			ResponseError(c, CodeUserExist)
 			return
@@ -37,18 +39,18 @@ func SignUpHandler(c *gin.Context) {
 		ResponseError(c, CodeServerBusy)
 		return
 	}
-	//3. return the response
+	// 3. 返回响应
 	ResponseSuccess(c, nil)
 }
 
-// LoginHandler LoginHandler is a function to handle login request
+// LoginHandler 登录
 func LoginHandler(c *gin.Context) {
-	// 1. get the user info from the request body
+	// 1.获取请求参数及参数校验
 	p := new(models.ParamLogin)
 	if err := c.ShouldBindJSON(p); err != nil {
-		// query param error
+		// 请求参数有误，直接返回响应
 		zap.L().Error("Login with invalid param", zap.Error(err))
-		// check err is validator.ValidationErrors
+		// 判断err是不是validator.ValidationErrors 类型
 		errs, ok := err.(validator.ValidationErrors)
 		if !ok {
 			ResponseError(c, CodeInvalidParam)
@@ -57,10 +59,10 @@ func LoginHandler(c *gin.Context) {
 		ResponseErrorWithMsg(c, CodeInvalidParam, removeTopStruct(errs.Translate(trans)))
 		return
 	}
-	// 2. handle the login logic
+	// 2.业务逻辑处理
 	user, err := logic.Login(p)
 	if err != nil {
-		zap.L().Error("logic.Login with error", zap.String("username", p.Username), zap.Error(err))
+		zap.L().Error("logic.Login failed", zap.String("username", p.Username), zap.Error(err))
 		if errors.Is(err, mysql.ErrorUserNotExist) {
 			ResponseError(c, CodeUserNotExist)
 			return
@@ -68,9 +70,10 @@ func LoginHandler(c *gin.Context) {
 		ResponseError(c, CodeInvalidPassword)
 		return
 	}
-	// 3. return the response
+
+	// 3.返回响应
 	ResponseSuccess(c, gin.H{
-		"user_id":   fmt.Sprintf("%d", user.UserID),
+		"user_id":   fmt.Sprintf("%d", user.UserID), // id值大于1<<53-1  int64类型的最大值是1<<63-1
 		"user_name": user.Username,
 		"token":     user.Token,
 	})

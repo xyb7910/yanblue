@@ -5,7 +5,6 @@ import (
 	"yanblue/dao/mysql"
 	"yanblue/dao/redis"
 
-	//"yanbule/dao/redis"
 	"yanblue/logger"
 	"yanblue/pkg/snowflake"
 	"yanblue/router"

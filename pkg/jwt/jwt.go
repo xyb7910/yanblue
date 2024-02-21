@@ -2,10 +2,11 @@ package jwt
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"time"
 
 	"github.com/spf13/viper"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 var mySecret = []byte("夏天夏天悄悄过去")

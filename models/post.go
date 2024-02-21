@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// 内存对齐概念
 type Post struct {
 	ID          int64     `json:"id,string" db:"post_id"`                            // 帖子id
 	AuthorID    int64     `json:"author_id" db:"author_id"`                          // 作者id
