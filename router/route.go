@@ -15,6 +15,17 @@ func SetupRouter(mode string) *gin.Engine {
 	r := gin.New()
 	r.Use(logger.GinLogger(), logger.GinRecovery(true))
 
+	r.LoadHTMLFiles("./templates/index.html")
+	r.Static("/static", "./static")
+
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
+
 	v1 := r.Group("/api/v1")
 	// 注册路由
 	v1.POST("/signup", controller.SignUpHandler)
